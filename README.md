@@ -9,3 +9,13 @@
 ## 基于中文预训练模型的微调实践
 
 我们设计了一套**预训练模型→专项微调→能力扩展**的完整流程，让通用模型逐步适配中文长文本检索的特殊需求。
+https://github.com/LeanderLi1014/retrieval/retrieval_1.jpg
+
+<figure>
+  <!-- 长文本检索模型微调流程 -->
+  <div style="text-align: center; margin-bottom: 20px;">
+    <img src="https://github.com/LeanderLi1014/retrieval/raw/main/retrieval_1.jpg" />
+    <div style="margin-top: 8px; font-weight: 500;"></div>
+  </div>
+目前是使用了三个中文预训练模型进行微调，也可以尝试其他的语言预训练模型进行相应语言的长文本检索模型微调。
+  
