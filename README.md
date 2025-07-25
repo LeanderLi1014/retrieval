@@ -122,7 +122,7 @@ $$\tau \downarrow \Rightarrow \text{概率分布更尖锐} \quad \tau \uparrow \
    - 降低梯度强度
    - 适用于噪声较多数据集
 
-
+最佳的情况，查询与正样本相似度增加，与负样本相似度下降，损失函数下降的方式进行，让模型可以学习相同语义的内容向量的相似。
 
 ## 物理意义图解
 
@@ -147,5 +147,27 @@ graph LR
     class C,D negative
 
 
+## 数据集
+项目数据集来源于 bge_m3 模型训练数据集的中文部分（FlagEmbedding 仓库），筛选适合长文本训练的子集包括：​
+MLDR 中文部分​
+lecardv2_len-7000-inf 部分​
+t2ranking​
+miracl_zh​
+dureader​
+总计约 288K 个样本，统一处理后的单样本结构如下：
+{
+  "query": "查询文本",
+  "positive_passages": [
+    {"text": "相关段落1"},
+    {"text": "相关段落2"}
+  ],
+  "negative_passages": [
+    {"text": "不相关段落1"},
+    {"text": "不相关段落2"}
+  ]
+}
+其中，positive_passages为与query相关正样本，样本里可能有一个也可能多个相关段落，negative_passages为与query相关负样本，样本里有多个负样本。
 
-                
+
+
+
