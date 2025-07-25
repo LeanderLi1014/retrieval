@@ -39,34 +39,113 @@ https://github.com/LeanderLi1014/retrieval/retrieval_1.jpg
 
 由tokenizer生成的包含input_ids和attention_mask的字典。input_ids分词后的token IDs（如 “肺癌早期筛查”→[101, 2345, 3456, ..., 102]）。attention_mask表示为token有效位置，（1 = 有效文本，0 = 填充位），避免模型关注无效填充内容。
 
-在**架构层**，为了让 “查询” 和 “文本” 说同一种语言，我们将原 Minimind 的单编码器结构，重构为 Query 塔 + doc 塔的双塔架构，且两塔共享全部网络参数。
+在**架构层**，为了让 “查询” 和 “文本” 说同一种语言，我们将原 Minimind 的单编码器结构，重构为 Query 塔 + passage 塔的双塔架构，且两塔共享全部网络参数。
 这样做的好处就是让查询塔和文档塔各司其职，Query 塔专注编码用户查询（如 “肺癌基因检测方法”），提取查询的核心语义特征。Passage 塔专注编码候选文本（如医学数据库中的论文、病例），提取文本的语义特征。
-双塔模型的设计，在小数据集的情况下可能舍弃检索的精度，但是当数据集非常大的时候，单塔模型的实时计算query-doc交互，消耗时间复杂度O(N)随文档量线性增长。双塔模型的优势就能体现出来，检索速度相对更快，非常适合工业级的扩展。所以我们的微调实验都基于双塔模型的设计。
-在单塔模型里，query塔和doc塔共用一个编码器，内存占比相对更少，所以我们共享权重虽然是双塔模型，但仅需单塔参数量（如 编码器27M的模型，双塔模型的参数量仍为27M），大幅降低训练与推理成本。
+双塔模型的设计，在小数据集的情况下可能舍弃检索的精度，但是当数据集非常大的时候，单塔模型的实时计算 query-passage 交互，消耗时间复杂度O(N)随文档量线性增长。双塔模型的优势就能体现出来，检索速度相对更快，非常适合工业级的扩展。所以我们的微调实验都基于双塔模型的设计。
+在单塔模型里，query 塔和 passage 塔共用一个编码器，内存占比相对更少，所以我们共享权重虽然是双塔模型，但仅需单塔参数量（如 编码器27M的模型，双塔模型的参数量仍为27M），大幅降低训练与推理成本。
 
 在**输出层**，摒弃原模型适用于文本生成的Token 概率分布输出，重构为文本级稠密向量输出
 
 {
     "dense_vecs": torch.FloatTensor  
 }
-Query/Passage 塔的编码器输出（[batch_size, seq_len, hidden_dim]）经池化（如取[CLS] token 的输出），得到单句特征。
+Query/passage 塔的编码器输出经池化（如平均池化），得到核心特征。
 再通过全连接层映射到固定维度（128维），输出最终的dense_vecs。
 
-输入数据
-    │
-    ├── 查询路径 ────► [RetrievalModel] ──► 查询向量 (128维)
-    │                 │
-    │                 ├── MiniMind基础模型
-    │                 ├── 平均池化层
-    │                 └── 投影层
-    │
-    └── 段落路径 ────► [RetrievalModel] ──► 段落向量 (128维)
-                          (权重共享)
-                          │
-                          ▼
-                InfoNCE对比损失计算
-                          │
-                          ▼
-                反向传播/参数更新
+在模型已经设计好了输入输出和架构后，我们就要考虑怎么让模型学习到区分查询，文档库里需要查询匹配的样本段（正样本）和不匹配的样本段（负样本）
+
+
+## 损失函数定义
+
+给定批次大小 $N$，每个查询对应 $K$ 个负样本，损失函数定义为：
+
+$$\mathcal{L} = -\frac{1}{N}\sum_{i=1}^N \log P(i^+)$$
+
+其中 $P(i^+)$ 表示查询 $i$ 与正样本的匹配概率：
+
+$$P(i^+) = \frac{\exp\left(\frac{\text{sim}(q_i, p^+)}{\tau}\right)}{
+\exp\left(\frac{\text{sim}(q_i, p^+)}{\tau}\right) + 
+\sum\limits_{j=1}^{N \times K} \exp\left(\frac{\text{sim}(q_i, p_j)}{\tau}\right)
+}$$
+
+## 变量说明
+
+| 符号 | 含义 | 范围/性质 |
+|------|------|-----------|
+| $N$ | 批次大小 | $N \in \mathbb{Z}^+$ |
+| $K$ | 每个查询的负样本数 | $K \in \mathbb{Z}^+$ |
+| $q_i$ | 第 $i$ 个查询向量 | $\mathbb{R}^d$ |
+| $p^+$ | 正样本向量 | $\mathbb{R}^d$ |
+| $p_j$ | 负样本向量 | $\mathbb{R}^d$ |
+| $\text{sim}(\cdot,\cdot)$ | 相似度函数（如余弦相似度） | $[-1, 1]$ |
+| $\tau$ | 温度参数 | $\tau > 0$ |
+| $s_{i,j} = \frac{\text{sim}(q_i, p_j)}{\tau}$ | 归一化相似度 | $\mathbb{R}$ |
+
+## 梯度分析
+
+### 正样本方向梯度
+
+$$\frac{\partial \mathcal{L}}{\partial s^+} = \frac{P(i^+) - 1}{N\tau} < 0$$
+
+**性质说明**：  
+梯度始终为负，驱使模型：
+1. 增大查询与正样本的相似度
+2. 缩短正样本在向量空间的距离
+
+### 负样本方向梯度
+
+$$\frac{\partial \mathcal{L}}{\partial s_{i,j}} = \frac{P(i,j)}{N\tau} > 0$$
+
+**性质说明**：  
+梯度始终为正，驱使模型：
+1. 减小查询与负样本的相似度
+2. 推远负样本在向量空间的距离
+
+## 优化动态
+
+| 变化方向 | 损失函数变化 | 优化效果 |
+|----------|--------------|----------|
+| $\uparrow \text{sim}(q_i, p^+)$ | $\mathcal{L} \downarrow$ | 正样本更接近查询 |
+| $\downarrow \text{sim}(q_i, p_j)$ | $\mathcal{L} \downarrow$ | 负样本远离查询 |
+| $\uparrow \text{sim}(q_i, p_j)$ | $\mathcal{L} \uparrow$ | 惩罚错误匹配 |
+| $\downarrow \text{sim}(q_i, p^+)$ | $\mathcal{L} \uparrow$ | 惩罚正样本远离 |
+
+## 温度参数 $\tau$ 的作用
+
+$$\tau \downarrow \Rightarrow \text{概率分布更尖锐} \quad \tau \uparrow \Rightarrow \text{概率分布更平滑}$$
+
+1. **较小 $\tau$（<0.1）**：  
+   - 强化困难负样本的区分度
+   - 适用于高质量数据集
+   
+2. **较大 $\tau$（>0.5）**：  
+   - 降低梯度强度
+   - 适用于噪声较多数据集
+
+
+
+## 物理意义图解
+
+```mermaid
+graph LR
+    A[查询向量] --> B(正样本)
+    A --> C(负样本1)
+    A --> D(负样本2)
+    
+    subgraph 向量空间
+    B -->|梯度：负向| A
+    C -->|梯度：正向| A
+    D -->|梯度：正向| A
+    end
+    
+    classDef positive fill:#d4f7d4,stroke:#2ecc71
+    classDef negative fill:#fadbd8,stroke:#e74c3c
+    classDef query fill:#d6eaf8,stroke:#3498db
+    
+    class A query
+    class B positive
+    class C,D negative
+
+
 
                 
