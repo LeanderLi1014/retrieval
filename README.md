@@ -302,7 +302,7 @@ num_hidden_layers = 8      # 原始Transformer层数（小模型基础配置）
 <figure>
   <!-- 27M模型minimind预训练模型损失函数与验证集测试 -->
   <div style="text-align: center; margin-bottom: 20px;">
-    <img src="https://github.com/LeanderLi1014/retrieval/raw/main/image1.jpg" />
+    <img src="https://github.com/LeanderLi1014/retrieval/raw/main/image1.png" />
     <div style="margin-top: 8px; font-weight: 500;"></div>
   </div>
   
