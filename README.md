@@ -10,7 +10,7 @@
 ## 基于中文预训练模型的通用微调流程实践
 
 我们设计了一套**预训练模型→检索微调→能力扩展**的完整流程，核心目标很简单：让不同规模、不同架构的预训练模型，都能 “学会” 精准处理中文长文本检索任务。
-https://github.com/LeanderLi1014/retrieval/retrieval_1.jpg
+
 
 <figure>
   <!-- 长文本检索模型微调流程 -->
@@ -299,6 +299,13 @@ num_hidden_layers = 8      # 原始Transformer层数（小模型基础配置）
 ```
 
 #### （2）训练过程分析  
+<figure>
+  <!-- 27M模型minimind预训练模型损失函数与验证集测试 -->
+  <div style="text-align: center; margin-bottom: 20px;">
+    <img src="https://github.com/LeanderLi1014/retrieval/raw/main/image1.jpg" />
+    <div style="margin-top: 8px; font-weight: 500;"></div>
+  </div>
+  
 从**训练损失曲线**可观察关键现象：  
 - **全局步数（Global Training Step）**：损失随训练步数增加呈**阶梯式下降**，在4000步、8000步等节点出现骤降，说明模型在逐渐学习语义匹配规律。  
 - **Epoch级验证指标**：随着训练轮次（Epoch）增加，`Recall@10`先快速上升后趋于稳定，`NDCG@10`持续优化但幅度有限。这表明：  
