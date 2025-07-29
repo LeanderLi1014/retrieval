@@ -330,13 +330,10 @@ datasets == 2.14.0                 # 数据集加载与预处理
 
 ## 4 结果与分析
 
-<figure>
-  <!-- 微调模型检索架构图 -->
-  <div style="text-align: center; margin-bottom: 20px;">
-    <img src="https://github.com/LeanderLi1014/retrieval/raw/main/model.jpeg" />
-    <div style="margin-top: 8px; font-weight: 500;"></div>
-  </div>
-微调模型检索架构图
+<figure style="text-align: center; margin-bottom: 20px;">
+    <img src="https://github.com/LeanderLi1014/retrieval/raw/main/model.jpeg" alt="微调模型检索架构图" style="display: block; margin-left: auto; margin-right: auto; max-width:100%; height:auto;" />
+    <figcaption style="font-weight: 500; text-align: center;">微调模型检索架构图</figcaption>
+</figure>
 
   
 ## 4.1 确立框架实验：小模型验证流程可行性  
