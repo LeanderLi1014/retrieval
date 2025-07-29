@@ -15,7 +15,7 @@
 <figure>
   <!-- 长文本检索模型微调流程 -->
   <div style="text-align: center; margin-bottom: 20px;">
-    <img src="https://github.com/LeanderLi1014/retrieval/raw/main/retrieval_1.jpg" />
+    <img src="https://github.com/LeanderLi1014/retrieval/raw/main/retrieval_5.jpg" />
     <div style="margin-top: 8px; font-weight: 500;"></div>
   </div>
 目前是使用了三个中文预训练模型进行微调，也可以尝试其他的语言预训练模型进行相应语言的长文本检索模型微调。
