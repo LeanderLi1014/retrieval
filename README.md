@@ -524,7 +524,9 @@ qwen2扩展后**所有指标的标准差均小于BGE-M3**，体现流程对模�
 3. **鲁棒性突破**：标准差全面降低，解决了通用模型“输出波动大”的工业痛点，为**医疗、法律等高可靠性场景**提供落地基础。  
 
 
-
-
-
-
+## 参考文献
+Wang Y, Su J, Lu H, et al. LEMON: Lossless model expansion[J]. arXiv preprint arXiv:2310.07999, 2023.
+Zhao W X, Zhou K, Li J, et al. A survey of large language models[J]. arXiv preprint arXiv:2303.18223, 2023, 1(2).
+Xiao S, Liu Z, Zhang P, et al. C-pack: Packed resources for general chinese embeddings[C]//Proceedings of the 47th international ACM SIGIR conference on research and development in information retrieval. 2024: 641-649.
+Multi-Granularity M L M F. M3-Embedding: Multi-Linguality, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation[J]. 2024.
+Yang C, Wang S, Yang C, et al. Progressively stacking 2.0: A multi-stage layerwise training method for bert training speedup[J]. arXiv preprint arXiv:2011.13635, 2020.
